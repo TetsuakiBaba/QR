@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QR Palette Studio</title>
+    <title>Simple QR Generator</title>
     <meta
       name="description"
-      content="A GitHub Pages-friendly QR generator that turns URLs into downloadable, styled QR codes."
+      content="A simple GitHub Pages-friendly QR generator for creating downloadable QR codes."
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -14,15 +14,15 @@
     <main class="app-shell">
       <section class="hero card">
         <div>
-          <p class="eyebrow">GitHub Pages QR Service</p>
-          <h1>QR Palette Studio</h1>
+          <p class="eyebrow">GitHub Pages QR Generator</p>
+          <h1>Simple QR Generator</h1>
           <p class="lead">
-            Turn any URL into a downloadable QR code with Material Design-inspired colors and shape variations.
+            Turn any URL into a downloadable QR code with a clean, simple interface.
           </p>
         </div>
         <div class="hero-badge">
           <span class="hero-badge-icon" aria-hidden="true">◧</span>
-          <span>Material Design Inspired</span>
+          <span>Monochrome UI</span>
         </div>
       </section>
 
@@ -42,7 +42,7 @@
 
           <div class="field-group">
             <label class="field" for="style-preset">
-              <span>Color preset</span>
+              <span>Preset</span>
               <select id="style-preset" name="preset"></select>
             </label>
             <label class="field" for="dot-shape">
@@ -59,11 +59,11 @@
 
           <div class="field-group">
             <label class="field" for="dot-color">
-              <span>QR color</span>
+              <span>Code color</span>
               <input id="dot-color" name="dotColor" type="color" value="#3949ab" />
             </label>
             <label class="field" for="background-color">
-              <span>Background</span>
+              <span>Background color</span>
               <input id="background-color" name="backgroundColor" type="color" value="#ffffff" />
             </label>
           </div>
@@ -76,8 +76,8 @@
           </div>
 
           <div class="actions">
-            <button type="submit" class="button primary">Generate QR</button>
-            <button type="button" class="button tonal" id="download-button">Download PNG</button>
+              <button type="submit" class="button primary">Generate QR</button>
+              <button type="button" class="button tonal" id="download-button">Download PNG</button>
           </div>
           <p class="helper" id="form-message" role="status" aria-live="polite"></p>
         </form>
@@ -86,7 +86,7 @@
           <div class="preview-header">
             <div>
               <p class="eyebrow">Preview</p>
-              <h2>Styled QR Code</h2>
+              <h2>QR Code Preview</h2>
             </div>
             <span class="pill" id="current-shape-label">Square</span>
           </div>
