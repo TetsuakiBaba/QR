@@ -183,7 +183,7 @@ downloadButton.addEventListener("click", () => {
   setMessage("PNG download started.");
 });
 
-urlInput.value = "https://github.com/TetsuakiBaba/QR";
+urlInput.value = "https://example.com";
 presetSelect.value = "Indigo";
 applyPreset("Indigo");
 renderQr();
