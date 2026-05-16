@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR Palette Studio</title>
+    <meta
+      name="description"
+      content="URLからダウンロード可能なデザインQRコードを作成できるGitHub Pages向けジェネレーター"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero card">
+        <div>
+          <p class="eyebrow">GitHub Pages QR Service</p>
+          <h1>QR Palette Studio</h1>
+          <p class="lead">
+            Turn any URL into a downloadable QR code with Material Design-inspired colors and shape variations.
+          </p>
+        </div>
+        <div class="hero-badge">
+          <span class="hero-badge-icon" aria-hidden="true">◧</span>
+          <span>Material Design Inspired</span>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <form class="card controls" id="generator-form">
+          <label class="field field-wide" for="url-input">
+            <span>URL</span>
+            <input
+              id="url-input"
+              name="url"
+              type="url"
+              inputmode="url"
+              placeholder="https://example.com"
+              required
+            />
+          </label>
+
+          <div class="field-group">
+            <label class="field" for="style-preset">
+              <span>Color preset</span>
+              <select id="style-preset" name="preset"></select>
+            </label>
+            <label class="field" for="dot-shape">
+              <span>Module shape</span>
+              <select id="dot-shape" name="dotShape">
+                <option value="square">Square</option>
+                <option value="rounded">Rounded</option>
+                <option value="extra-rounded">Extra Rounded</option>
+                <option value="classy">Classy</option>
+                <option value="classy-rounded">Classy Rounded</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="field-group">
+            <label class="field" for="dot-color">
+              <span>QR color</span>
+              <input id="dot-color" name="dotColor" type="color" value="#3949ab" />
+            </label>
+            <label class="field" for="background-color">
+              <span>Background</span>
+              <input id="background-color" name="backgroundColor" type="color" value="#ffffff" />
+            </label>
+          </div>
+
+          <div class="field-group compact">
+            <label class="switch" for="transparent-bg">
+              <input id="transparent-bg" name="transparent" type="checkbox" />
+              <span>Transparent background</span>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="button primary">Generate QR</button>
+            <button type="button" class="button tonal" id="download-button">Download PNG</button>
+          </div>
+          <p class="helper" id="form-message" role="status" aria-live="polite"></p>
+        </form>
+
+        <section class="card preview-panel" aria-label="QR preview">
+          <div class="preview-header">
+            <div>
+              <p class="eyebrow">Preview</p>
+              <h2>Styled QR Code</h2>
+            </div>
+            <span class="pill" id="current-shape-label">Square</span>
+          </div>
+          <div class="preview-stage" id="qr-preview"></div>
+          <dl class="details">
+            <div>
+              <dt>URL</dt>
+              <dd id="preview-url">https://example.com</dd>
+            </div>
+            <div>
+              <dt>Style</dt>
+              <dd id="preview-style">Indigo</dd>
+            </div>
+          </dl>
+        </section>
+      </section>
+    </main>
+
+    <script src="./vendor/qrcode.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
