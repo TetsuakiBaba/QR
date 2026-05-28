@@ -33,6 +33,8 @@ function clearCenterImage(clearInput = false) {
   if (clearInput) {
     centerImageInput.value = "";
   }
+  centerImage.onload = null;
+  centerImage.onerror = null;
   centerImageDataUrl = "";
   centerImage.removeAttribute("src");
 }
@@ -346,7 +348,7 @@ downloadSvgButton.addEventListener("click", () => {
 });
 
 centerImageInput.addEventListener("change", () => {
-  const file = centerImageInput.files && centerImageInput.files[0];
+  const file = centerImageInput.files?.[0];
   if (!file) {
     clearCenterImage();
     renderQr();
@@ -361,6 +363,8 @@ centerImageInput.addEventListener("change", () => {
   const reader = new FileReader();
   reader.onload = () => {
     centerImageDataUrl = String(reader.result || "");
+    centerImage.onload = null;
+    centerImage.onerror = null;
     centerImage.onerror = () => {
       clearCenterImage(true);
       renderQr();
