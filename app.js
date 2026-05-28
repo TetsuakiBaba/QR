@@ -124,7 +124,16 @@ function formatNumber(value) {
 
 function getCenterImageRect(maxWidth, maxHeight, sourceWidth, sourceHeight) {
   const maxSize = Math.min(maxWidth, maxHeight) * CENTER_IMAGE_MAX_RATIO;
-  const imageAspect = sourceWidth > 0 && sourceHeight > 0 ? sourceWidth / sourceHeight : 1;
+  if (sourceWidth <= 0 || sourceHeight <= 0) {
+    return {
+      x: (maxWidth - maxSize) / 2,
+      y: (maxHeight - maxSize) / 2,
+      width: maxSize,
+      height: maxSize,
+    };
+  }
+
+  const imageAspect = sourceWidth / sourceHeight;
 
   let width = maxSize;
   let height = maxSize;
@@ -344,6 +353,13 @@ centerImageInput.addEventListener("change", () => {
   const reader = new FileReader();
   reader.onload = () => {
     centerImageDataUrl = String(reader.result || "");
+    centerImage.onerror = () => {
+      centerImageInput.value = "";
+      centerImageDataUrl = "";
+      centerImage.removeAttribute("src");
+      renderQr();
+      setMessage("Selected file could not be loaded as an image.", true);
+    };
     centerImage.onload = () => {
       renderQr();
       setMessage("Center image updated.");
