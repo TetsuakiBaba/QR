@@ -7,7 +7,7 @@ const stylePresets = {
 
 const QR_SIZE = 320;
 const QUIET_ZONE = 24;
-const CENTER_IMAGE_MAX_RATIO = 0.22;
+const CENTER_IMAGE_MAX_SIZE_RATIO = 0.22;
 
 const form = document.getElementById("generator-form");
 const urlInput = document.getElementById("url-input");
@@ -28,6 +28,14 @@ const clearLogoButton = document.getElementById("clear-logo-button");
 
 let centerImageDataUrl = "";
 const centerImage = new Image();
+
+function clearCenterImage(clearInput = false) {
+  if (clearInput) {
+    centerImageInput.value = "";
+  }
+  centerImageDataUrl = "";
+  centerImage.removeAttribute("src");
+}
 
 const canvas = document.createElement("canvas");
 canvas.width = QR_SIZE;
@@ -123,8 +131,9 @@ function formatNumber(value) {
 }
 
 function getCenterImageRect(maxWidth, maxHeight, sourceWidth, sourceHeight) {
-  const maxSize = Math.min(maxWidth, maxHeight) * CENTER_IMAGE_MAX_RATIO;
+  const maxSize = Math.min(maxWidth, maxHeight) * CENTER_IMAGE_MAX_SIZE_RATIO;
   if (sourceWidth <= 0 || sourceHeight <= 0) {
+    // Keep a safe square fallback if the uploaded image metadata is invalid.
     return {
       x: (maxWidth - maxSize) / 2,
       y: (maxHeight - maxSize) / 2,
@@ -339,8 +348,7 @@ downloadSvgButton.addEventListener("click", () => {
 centerImageInput.addEventListener("change", () => {
   const file = centerImageInput.files && centerImageInput.files[0];
   if (!file) {
-    centerImageDataUrl = "";
-    centerImage.removeAttribute("src");
+    clearCenterImage();
     renderQr();
     return;
   }
@@ -354,9 +362,7 @@ centerImageInput.addEventListener("change", () => {
   reader.onload = () => {
     centerImageDataUrl = String(reader.result || "");
     centerImage.onerror = () => {
-      centerImageInput.value = "";
-      centerImageDataUrl = "";
-      centerImage.removeAttribute("src");
+      clearCenterImage(true);
       renderQr();
       setMessage("Selected file could not be loaded as an image.", true);
     };
@@ -373,9 +379,7 @@ centerImageInput.addEventListener("change", () => {
 });
 
 clearLogoButton.addEventListener("click", () => {
-  centerImageInput.value = "";
-  centerImageDataUrl = "";
-  centerImage.removeAttribute("src");
+  clearCenterImage(true);
   renderQr();
   setMessage("Center image removed.");
 });
