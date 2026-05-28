@@ -7,6 +7,7 @@ const stylePresets = {
 
 const QR_SIZE = 320;
 const QUIET_ZONE = 24;
+const CENTER_IMAGE_MAX_RATIO = 0.22;
 
 const form = document.getElementById("generator-form");
 const urlInput = document.getElementById("url-input");
@@ -21,6 +22,12 @@ const previewUrl = document.getElementById("preview-url");
 const previewStyle = document.getElementById("preview-style");
 const currentShapeLabel = document.getElementById("current-shape-label");
 const downloadButton = document.getElementById("download-button");
+const downloadSvgButton = document.getElementById("download-svg-button");
+const centerImageInput = document.getElementById("center-image");
+const clearLogoButton = document.getElementById("clear-logo-button");
+
+let centerImageDataUrl = "";
+const centerImage = new Image();
 
 const canvas = document.createElement("canvas");
 canvas.width = QR_SIZE;
@@ -111,44 +118,159 @@ function drawModule(ctx, shape, x, y, size) {
   }
 }
 
+function formatNumber(value) {
+  return Number(value.toFixed(4));
+}
+
+function getCenterImageRect(maxWidth, maxHeight, sourceWidth, sourceHeight) {
+  const maxSize = Math.min(maxWidth, maxHeight) * CENTER_IMAGE_MAX_RATIO;
+  const imageAspect = sourceWidth > 0 && sourceHeight > 0 ? sourceWidth / sourceHeight : 1;
+
+  let width = maxSize;
+  let height = maxSize;
+  if (imageAspect > 1) {
+    height = maxSize / imageAspect;
+  } else {
+    width = maxSize * imageAspect;
+  }
+
+  return {
+    x: (maxWidth - width) / 2,
+    y: (maxHeight - height) / 2,
+    width,
+    height,
+  };
+}
+
+function drawCenterImage(context) {
+  if (!centerImageDataUrl || !centerImage.complete) {
+    return;
+  }
+
+  const rect = getCenterImageRect(QR_SIZE, QR_SIZE, centerImage.naturalWidth, centerImage.naturalHeight);
+  const padding = Math.max(6, QR_SIZE * 0.015);
+  context.fillStyle = "#ffffff";
+  drawRoundedRect(
+    context,
+    rect.x - padding,
+    rect.y - padding,
+    rect.width + padding * 2,
+    rect.height + padding * 2,
+    padding * 1.5
+  );
+  context.drawImage(centerImage, rect.x, rect.y, rect.width, rect.height);
+}
+
+function getCurrentState() {
+  const normalizedUrl = normalizeUrl(urlInput.value);
+  const qr = buildQrMatrix(normalizedUrl);
+  const moduleCount = qr.getModuleCount();
+
+  return {
+    normalizedUrl,
+    qr,
+    moduleCount,
+    cellSize: (QR_SIZE - QUIET_ZONE * 2) / moduleCount,
+    shape: dotShapeSelect.value,
+    dotColor: dotColorInput.value,
+    backgroundColor: transparentToggle.checked ? null : backgroundColorInput.value,
+  };
+}
+
+function createSvgContent(state) {
+  const parts = [
+    `<?xml version="1.0" encoding="UTF-8"?>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${QR_SIZE}" height="${QR_SIZE}" viewBox="0 0 ${QR_SIZE} ${QR_SIZE}">`,
+  ];
+
+  if (state.backgroundColor) {
+    parts.push(`<rect x="0" y="0" width="${QR_SIZE}" height="${QR_SIZE}" fill="${state.backgroundColor}"/>`);
+  }
+
+  for (let row = 0; row < state.moduleCount; row += 1) {
+    for (let col = 0; col < state.moduleCount; col += 1) {
+      if (!state.qr.isDark(row, col)) {
+        continue;
+      }
+
+      const x = QUIET_ZONE + col * state.cellSize;
+      const y = QUIET_ZONE + row * state.cellSize;
+      const size = state.cellSize;
+      if (state.shape === "rounded") {
+        parts.push(
+          `<rect x="${formatNumber(x)}" y="${formatNumber(y)}" width="${formatNumber(size)}" height="${formatNumber(size)}" rx="${formatNumber(size * 0.28)}" ry="${formatNumber(size * 0.28)}" fill="${state.dotColor}"/>`
+        );
+      } else if (state.shape === "extra-rounded") {
+        parts.push(
+          `<circle cx="${formatNumber(x + size / 2)}" cy="${formatNumber(y + size / 2)}" r="${formatNumber(size * 0.46)}" fill="${state.dotColor}"/>`
+        );
+      } else if (state.shape === "classy") {
+        const cx = x + size / 2;
+        const cy = y + size / 2;
+        const half = (size * 0.92) / 2;
+        parts.push(
+          `<polygon points="${formatNumber(cx)},${formatNumber(cy - half)} ${formatNumber(cx + half)},${formatNumber(cy)} ${formatNumber(cx)},${formatNumber(cy + half)} ${formatNumber(cx - half)},${formatNumber(cy)}" fill="${state.dotColor}"/>`
+        );
+      } else if (state.shape === "classy-rounded") {
+        parts.push(
+          `<rect x="${formatNumber(x + size * 0.08)}" y="${formatNumber(y + size * 0.08)}" width="${formatNumber(size * 0.84)}" height="${formatNumber(size * 0.84)}" rx="${formatNumber(size * 0.32)}" ry="${formatNumber(size * 0.32)}" fill="${state.dotColor}"/>`
+        );
+      } else {
+        parts.push(
+          `<rect x="${formatNumber(x)}" y="${formatNumber(y)}" width="${formatNumber(size)}" height="${formatNumber(size)}" fill="${state.dotColor}"/>`
+        );
+      }
+    }
+  }
+
+  if (centerImageDataUrl && centerImage.complete) {
+    const rect = getCenterImageRect(QR_SIZE, QR_SIZE, centerImage.naturalWidth, centerImage.naturalHeight);
+    const padding = Math.max(6, QR_SIZE * 0.015);
+    parts.push(
+      `<rect x="${formatNumber(rect.x - padding)}" y="${formatNumber(rect.y - padding)}" width="${formatNumber(rect.width + padding * 2)}" height="${formatNumber(rect.height + padding * 2)}" rx="${formatNumber(padding * 1.5)}" ry="${formatNumber(padding * 1.5)}" fill="#ffffff"/>`
+    );
+    parts.push(
+      `<image href="${centerImageDataUrl}" x="${formatNumber(rect.x)}" y="${formatNumber(rect.y)}" width="${formatNumber(rect.width)}" height="${formatNumber(rect.height)}" preserveAspectRatio="xMidYMid meet"/>`
+    );
+  }
+
+  parts.push(`</svg>`);
+  return parts.join("");
+}
+
 function renderQr() {
   try {
-    const normalizedUrl = normalizeUrl(urlInput.value);
-    const qr = buildQrMatrix(normalizedUrl);
-    const moduleCount = qr.getModuleCount();
-    const cellSize = (QR_SIZE - QUIET_ZONE * 2) / moduleCount;
-    const shape = dotShapeSelect.value;
-    const dotColor = dotColorInput.value;
-    const backgroundColor = transparentToggle.checked ? null : backgroundColorInput.value;
+    const state = getCurrentState();
     const context = canvas.getContext("2d");
 
     context.clearRect(0, 0, QR_SIZE, QR_SIZE);
-    if (backgroundColor) {
-      context.fillStyle = backgroundColor;
+    if (state.backgroundColor) {
+      context.fillStyle = state.backgroundColor;
       context.fillRect(0, 0, QR_SIZE, QR_SIZE);
     }
 
-    context.fillStyle = dotColor;
-    for (let row = 0; row < moduleCount; row += 1) {
-      for (let col = 0; col < moduleCount; col += 1) {
-        if (!qr.isDark(row, col)) {
+    context.fillStyle = state.dotColor;
+    for (let row = 0; row < state.moduleCount; row += 1) {
+      for (let col = 0; col < state.moduleCount; col += 1) {
+        if (!state.qr.isDark(row, col)) {
           continue;
         }
 
-        const x = QUIET_ZONE + col * cellSize;
-        const y = QUIET_ZONE + row * cellSize;
-        drawModule(context, shape, x, y, cellSize);
+        const x = QUIET_ZONE + col * state.cellSize;
+        const y = QUIET_ZONE + row * state.cellSize;
+        drawModule(context, state.shape, x, y, state.cellSize);
       }
     }
+    drawCenterImage(context);
 
-    previewUrl.textContent = normalizedUrl;
+    previewUrl.textContent = state.normalizedUrl;
     previewStyle.textContent = presetSelect.value;
     currentShapeLabel.textContent = dotShapeSelect.selectedOptions[0].textContent;
-    setMessage("QR code updated. You can download it as a PNG.");
-    return true;
+    setMessage("QR code updated. You can download it as PNG or SVG.");
+    return state;
   } catch (error) {
     setMessage(error.message, true);
-    return false;
+    return null;
   }
 }
 
@@ -157,6 +279,17 @@ function downloadCanvas() {
   link.href = canvas.toDataURL("image/png");
   link.download = "qr-palette-studio.png";
   link.click();
+}
+
+function downloadSvg(state) {
+  const svgContent = createSvgContent(state);
+  const blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "qr-palette-studio.svg";
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 presetSelect.addEventListener("change", () => {
@@ -175,12 +308,60 @@ form.addEventListener("submit", (event) => {
 });
 
 downloadButton.addEventListener("click", () => {
-  if (!renderQr()) {
+  const state = renderQr();
+  if (!state) {
     return;
   }
 
   downloadCanvas();
   setMessage("PNG download started.");
+});
+
+downloadSvgButton.addEventListener("click", () => {
+  const state = renderQr();
+  if (!state) {
+    return;
+  }
+
+  downloadSvg(state);
+  setMessage("SVG download started.");
+});
+
+centerImageInput.addEventListener("change", () => {
+  const file = centerImageInput.files && centerImageInput.files[0];
+  if (!file) {
+    centerImageDataUrl = "";
+    centerImage.removeAttribute("src");
+    renderQr();
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    setMessage("Please select an image file.", true);
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    centerImageDataUrl = String(reader.result || "");
+    centerImage.onload = () => {
+      renderQr();
+      setMessage("Center image updated.");
+    };
+    centerImage.src = centerImageDataUrl;
+  };
+  reader.onerror = () => {
+    setMessage("Could not read the selected image.", true);
+  };
+  reader.readAsDataURL(file);
+});
+
+clearLogoButton.addEventListener("click", () => {
+  centerImageInput.value = "";
+  centerImageDataUrl = "";
+  centerImage.removeAttribute("src");
+  renderQr();
+  setMessage("Center image removed.");
 });
 
 urlInput.value = "https://example.com";
