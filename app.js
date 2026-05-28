@@ -25,6 +25,7 @@ const downloadButton = document.getElementById("download-button");
 const downloadSvgButton = document.getElementById("download-svg-button");
 const centerImageInput = document.getElementById("center-image");
 const clearLogoButton = document.getElementById("clear-logo-button");
+const copyLinkButton = document.getElementById("copy-link-button");
 
 let centerImageDataUrl = "";
 const centerImage = new Image();
@@ -312,6 +313,51 @@ function downloadSvg(state) {
   URL.revokeObjectURL(url);
 }
 
+function buildShareUrl() {
+  const params = new URLSearchParams();
+  params.set("url", urlInput.value.trim());
+  params.set("dotColor", dotColorInput.value);
+  params.set("backgroundColor", backgroundColorInput.value);
+  params.set("dotShape", dotShapeSelect.value);
+  if (transparentToggle.checked) {
+    params.set("transparent", "1");
+  }
+  if (presetSelect.value) {
+    params.set("preset", presetSelect.value);
+  }
+  const shareUrl = `${location.origin}${location.pathname}?${params.toString()}`;
+  return shareUrl;
+}
+
+function loadFromParams() {
+  const params = new URLSearchParams(location.search);
+  if (params.has("url")) {
+    urlInput.value = params.get("url");
+  }
+  if (params.has("dotShape")) {
+    const shape = params.get("dotShape");
+    const allowed = Array.from(dotShapeSelect.options).map((o) => o.value);
+    if (allowed.includes(shape)) {
+      dotShapeSelect.value = shape;
+    }
+  }
+  if (params.has("dotColor")) {
+    dotColorInput.value = params.get("dotColor");
+  }
+  if (params.has("backgroundColor")) {
+    backgroundColorInput.value = params.get("backgroundColor");
+  }
+  if (params.has("transparent")) {
+    transparentToggle.checked = params.get("transparent") === "1";
+  }
+  if (params.has("preset")) {
+    const preset = params.get("preset");
+    if (Object.prototype.hasOwnProperty.call(stylePresets, preset)) {
+      presetSelect.value = preset;
+    }
+  }
+}
+
 presetSelect.addEventListener("change", () => {
   applyPreset(presetSelect.value);
   renderQr();
@@ -380,6 +426,14 @@ centerImageInput.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
+copyLinkButton.addEventListener("click", () => {
+  const shareUrl = buildShareUrl();
+  navigator.clipboard.writeText(shareUrl).then(
+    () => setMessage("Share link copied to clipboard!"),
+    () => setMessage("Could not copy to clipboard. Please copy the URL manually: " + shareUrl, true)
+  );
+});
+
 clearLogoButton.addEventListener("click", () => {
   clearCenterImage(true);
   renderQr();
@@ -389,4 +443,5 @@ clearLogoButton.addEventListener("click", () => {
 urlInput.value = "https://example.com";
 presetSelect.value = "Indigo";
 applyPreset("Indigo");
+loadFromParams();
 renderQr();
