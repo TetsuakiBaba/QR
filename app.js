@@ -362,9 +362,7 @@ centerImageInput.addEventListener("change", () => {
 
   const reader = new FileReader();
   reader.onload = () => {
-    centerImageDataUrl = String(reader.result || "");
-    centerImage.onload = null;
-    centerImage.onerror = null;
+    centerImageDataUrl = reader.result || "";
     centerImage.onerror = () => {
       clearCenterImage(true);
       renderQr();
